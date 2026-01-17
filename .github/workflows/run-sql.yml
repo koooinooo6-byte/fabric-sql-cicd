@@ -21,10 +21,9 @@ jobs:
       # Install NEW sqlcmd (v1) that supports --access-token
       - name: Install new sqlcmd (v1)
         run: |
-          curl -L -o sqlcmd.tar.gz https://github.com/microsoft/go-sqlcmd/releases/latest/download/sqlcmd-linux-amd64.tar.gz
-          tar -xzf sqlcmd.tar.gz
+          curl -L -o sqlcmd https://github.com/microsoft/go-sqlcmd/releases/latest/download/sqlcmd-linux-amd64
+          chmod +x sqlcmd
           sudo mv sqlcmd /usr/local/bin/sqlcmd
-          sudo chmod +x /usr/local/bin/sqlcmd
 
       # Azure login using OIDC
       - name: Azure login (OIDC)
