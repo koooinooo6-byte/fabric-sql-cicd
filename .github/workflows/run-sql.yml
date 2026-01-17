@@ -6,23 +6,38 @@ on:
 jobs:
   run-sql-dev:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Run SQL on Fabric (DEV)
+      - name: Login to Azure (Service Principal)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          client-secret: ${{ secrets.CLIENT_SECRET }}
+
+      - name: Run CREATE TABLE script
         run: |
-          docker run --rm mcr.microsoft.com/mssql-tools \
+          docker run --rm \
+            -v ${{ github.workspace }}:/work \
+            mcr.microsoft.com/mssql-tools \
             /opt/mssql-tools/bin/sqlcmd \
-            -S ${{ secrets.SQL_SERVER }} \
-            -d ${{ secrets.SQL_DATABASE }} \
-            -G \
-            -Q "SELECT GETDATE();"
+              -S ${{ secrets.SQL_SERVER }} \
+              -d ${{ secrets.SQL_DATABASE }} \
+              -G \
+              -C \
+              -i /work/sql/dev/01_create_tables.sql
 
-      - name: Run DEV SQL
+      - name: Run INSERT metadata script
         run: |
-          sqlcmd -S ${{ secrets.SQL_SERVER }} \
-                 -d ${{ secrets.SQL_DATABASE }} \
-                 -G \
-                 -U ${{ secrets.CLIENT_ID }} \
-                 -P ${{ secrets.CLIENT_SECRET }} \
-                 -i sql/dev.sql
+          docker run --rm \
+            -v ${{ github.workspace }}:/work \
+            mcr.microsoft.com/mssql-tools \
+            /opt/mssql-tools/bin/sqlcmd \
+              -S ${{ secrets.SQL_SERVER }} \
+              -d ${{ secrets.SQL_DATABASE }} \
+              -G \
+              -C \
+              -i /work/sql/dev/02_insert_metadata.sql
