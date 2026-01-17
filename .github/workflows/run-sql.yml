@@ -18,17 +18,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install sqlcmd (ODBC 18)
+      # Install NEW sqlcmd (v1) that supports --access-token
+      - name: Install new sqlcmd (v1)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y curl apt-transport-https
-          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-          curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list \
-            | sudo tee /etc/apt/sources.list.d/mssql-release.list
-          sudo apt-get update
-          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
-          echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
+          curl -LO https://aka.ms/sqlcmd-linux
+          tar -xvf sqlcmd-linux
+          sudo mv sqlcmd /usr/local/bin/sqlcmd
+          sudo chmod +x /usr/local/bin/sqlcmd
 
+      # Azure login using OIDC
       - name: Azure login (OIDC)
         uses: azure/login@v1
         with:
@@ -36,6 +34,7 @@ jobs:
           tenant-id: ${{ secrets.TENANT_ID }}
           allow-no-subscriptions: true
 
+      # Get Azure AD access token for Fabric SQL
       - name: Get Fabric SQL access token
         run: |
           TOKEN=$(az account get-access-token \
@@ -46,19 +45,22 @@ jobs:
       - name: Verify SQL files
         run: ls -R sql
 
+      # Run CREATE TABLE script
       - name: Run CREATE TABLE
         run: |
           sqlcmd \
-            -S "tcp:${SQL_SERVER}" \
+            -S "${SQL_SERVER}" \
             -d "${SQL_DATABASE}" \
             -C \
             --access-token "$SQLCMDACCESS_TOKEN" \
             -i sql/dev/create_table.sql
 
+      # Run INSERT metadata script
       - name: Run INSERT metadata
         run: |
           sqlcmd \
-            -S "tcp:${SQL_SERVER}" \
+            -S "${SQL_SERVER}" \
             -d "${SQL_DATABASE}" \
             -C \
             --access-token "$SQLCMDACCESS_TOKEN" \
+            -i sql/dev/insert_metadata.sql
