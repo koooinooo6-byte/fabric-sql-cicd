@@ -18,24 +18,25 @@ jobs:
       - name: Run CREATE TABLE script
         run: |
           docker run --rm \
-            -e SQLCMDPASSWORD="${{ secrets.CLIENT_SECRET }}" \
-            mcr.microsoft.com/mssql-tools \
-            /opt/mssql-tools/bin/sqlcmd \
+            mcr.microsoft.com/mssql-tools:latest \
+            /opt/mssql-tools18/bin/sqlcmd \
             -S ${{ secrets.SQL_SERVER }} \
             -d ${{ secrets.SQL_DATABASE }} \
-            -U ${{ secrets.CLIENT_ID }} \
             -G \
+            -U ${{ secrets.CLIENT_ID }} \
             -i sql/create_table.sql
 
 
       - name: Run INSERT metadata script
         run: |
-          docker run --rm \
-            -e SQLCMDPASSWORD="${{ secrets.CLIENT_SECRET }}" \
-            mcr.microsoft.com/mssql-tools \
-            /opt/mssql-tools/bin/sqlcmd \
-            -S ${{ secrets.SQL_SERVER }} \
-            -d ${{ secrets.SQL_DATABASE }} \
-            -U ${{ secrets.CLIENT_ID }} \
-            -G \
-            -i sql/insert_metadata.sql
+           docker run --rm \
+             mcr.microsoft.com/mssql-tools:latest \
+             /opt/mssql-tools18/bin/sqlcmd \
+             -S ${{ secrets.SQL_SERVER }} \
+             -d ${{ secrets.SQL_DATABASE }} \
+             -G \
+             -U ${{ secrets.CLIENT_ID }} \
+             -i sql/insert_metadata.sql
+
+        
+
