@@ -32,19 +32,12 @@ jobs:
           sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
           echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
 
-      - name: Login to Azure using OIDC
+      - name: Azure login using OIDC (Service Principal)
         uses: azure/login@v1
         with:
           client-id: ${{ secrets.CLIENT_ID }}
           tenant-id: ${{ secrets.TENANT_ID }}
           allow-no-subscriptions: true
-
-      - name: Get Fabric access token
-        run: |
-          TOKEN=$(az account get-access-token \
-            --resource https://database.windows.net \
-            --query accessToken -o tsv)
-          echo "FABRIC_SQL_TOKEN=$TOKEN" >> $GITHUB_ENV
 
       - name: Verify SQL files exist
         run: ls -R sql
@@ -55,7 +48,7 @@ jobs:
             -S "$SQL_SERVER" \
             -d "$SQL_DATABASE" \
             -G \
-            --access-token "$FABRIC_SQL_TOKEN" \
+            -U "$CLIENT_ID" \
             -i sql/dev/create_table.sql
 
       - name: Run INSERT metadata script
@@ -64,5 +57,5 @@ jobs:
             -S "$SQL_SERVER" \
             -d "$SQL_DATABASE" \
             -G \
-            --access-token "$FABRIC_SQL_TOKEN" \
+            -U "$CLIENT_ID" \
             -i sql/dev/insert_metadata.sql
