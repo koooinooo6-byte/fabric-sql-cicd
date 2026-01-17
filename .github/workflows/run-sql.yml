@@ -1,17 +1,31 @@
-name: Run SQL on Fabric (DEV)
+name: Run SQL on Fabric
 
 on:
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Choose environment"
+        required: true
+        type: choice
+        options:
+          - DEV
+          - TEST
+          - PROD
 
 jobs:
-  run-sql-dev:
+  run-sql:
     runs-on: ubuntu-latest
+
+    env:
+      SQL_SERVER: ${{ secrets[format('SQL_SERVER_{0}', inputs.environment)] }}
+      SQL_DATABASE: ${{ secrets[format('SQL_DATABASE_{0}', inputs.environment)] }}
+      CLIENT_ID: ${{ secrets[format('CLIENT_ID_{0}', inputs.environment)] }}
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install sqlcmd
+      - name: Pull sqlcmd image
         run: |
           docker pull mcr.microsoft.com/mssql-tools
 
@@ -19,24 +33,20 @@ jobs:
         run: |
           docker run --rm \
             mcr.microsoft.com/mssql-tools:latest \
-            /opt/mssql-tools18/bin/sqlcmd \
-            -S ${{ secrets.SQL_SERVER }} \
-            -d ${{ secrets.SQL_DATABASE }} \
+            /opt/mssql-tools/bin/sqlcmd \
+            -S $SQL_SERVER \
+            -d $SQL_DATABASE \
             -G \
-            -U ${{ secrets.CLIENT_ID }} \
+            -U $CLIENT_ID \
             -i sql/create_table.sql
-
 
       - name: Run INSERT metadata script
         run: |
-           docker run --rm \
-             mcr.microsoft.com/mssql-tools:latest \
-             /opt/mssql-tools18/bin/sqlcmd \
-             -S ${{ secrets.SQL_SERVER }} \
-             -d ${{ secrets.SQL_DATABASE }} \
-             -G \
-             -U ${{ secrets.CLIENT_ID }} \
-             -i sql/insert_metadata.sql
-
-        
-
+          docker run --rm \
+            mcr.microsoft.com/mssql-tools:latest \
+            /opt/mssql-tools/bin/sqlcmd \
+            -S $SQL_SERVER \
+            -d $SQL_DATABASE \
+            -G \
+            -U $CLIENT_ID \
+            -i sql/insert_metadata.sql
