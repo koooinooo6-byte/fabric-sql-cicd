@@ -2,7 +2,7 @@ name: Run SQL on Fabric (DEV)
 
 permissions:
   contents: read
-  id-token: write   # REQUIRED for OIDC
+  id-token: write
 
 on:
   workflow_dispatch:
@@ -14,8 +14,8 @@ jobs:
     env:
       SQL_SERVER: ${{ secrets.SQL_SERVER }}
       SQL_DATABASE: ${{ secrets.SQL_DATABASE }}
-      CLIENT_ID: ${{ secrets.CLIENT_ID }}
       TENANT_ID: ${{ secrets.TENANT_ID }}
+      CLIENT_ID: ${{ secrets.CLIENT_ID }}
 
     steps:
       - name: Checkout repository
@@ -32,30 +32,30 @@ jobs:
           sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
           echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
 
-      - name: Azure login using OIDC (Service Principal)
+      - name: Azure login using OIDC
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.CLIENT_ID }}
+          client-id: ${{ secrets.CLIENT_ID }}   # GUID ONLY
           tenant-id: ${{ secrets.TENANT_ID }}
           allow-no-subscriptions: true
 
       - name: Verify SQL files exist
         run: ls -R sql
 
-      - name: Run CREATE TABLE script
+      - name: Run CREATE TABLE
         run: |
           sqlcmd \
             -S "$SQL_SERVER" \
             -d "$SQL_DATABASE" \
             -G \
-            -U "$CLIENT_ID" \
+            -U "fabric-sql-cicd" \
             -i sql/dev/create_table.sql
 
-      - name: Run INSERT metadata script
+      - name: Run INSERT metadata
         run: |
           sqlcmd \
             -S "$SQL_SERVER" \
             -d "$SQL_DATABASE" \
             -G \
-            -U "$CLIENT_ID" \
+            -U "fabric-sql-cicd" \
             -i sql/dev/insert_metadata.sql
