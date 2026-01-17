@@ -1,11 +1,11 @@
 name: Run SQL on Fabric (DEV)
 
-permissions:
-  contents: read
-  id-token: write
-
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write   # REQUIRED
 
 jobs:
   run-sql:
@@ -14,8 +14,8 @@ jobs:
     env:
       SQL_SERVER: ${{ secrets.SQL_SERVER }}
       SQL_DATABASE: ${{ secrets.SQL_DATABASE }}
-      TENANT_ID: ${{ secrets.TENANT_ID }}
       CLIENT_ID: ${{ secrets.CLIENT_ID }}
+      TENANT_ID: ${{ secrets.TENANT_ID }}
 
     steps:
       - name: Checkout repository
@@ -24,38 +24,42 @@ jobs:
       - name: Install sqlcmd (ODBC 18)
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl apt-transport-https
-          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-          curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list \
-            | sudo tee /etc/apt/sources.list.d/mssql-release.list
+          sudo apt-get install -y curl gnupg apt-transport-https
+          curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/ubuntu/22.04/prod jammy main" | sudo tee /etc/apt/sources.list.d/mssql-release.list
           sudo apt-get update
           sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
           echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
 
-      - name: Azure login using OIDC
+      - name: Azure login (OIDC)
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.CLIENT_ID }}   # GUID ONLY
+          client-id: ${{ secrets.CLIENT_ID }}
           tenant-id: ${{ secrets.TENANT_ID }}
           allow-no-subscriptions: true
 
-      - name: Verify SQL files exist
+      - name: Get Fabric SQL access token
+        run: |
+          TOKEN=$(az account get-access-token \
+            --resource https://database.windows.net \
+            --query accessToken -o tsv)
+          echo "SQLCMDACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
+
+      - name: Verify SQL files
         run: ls -R sql
 
-      - name: Run CREATE TABLE
+      - name: Run CREATE TABLE script
         run: |
           sqlcmd \
-            -S "$SQL_SERVER" \
-            -d "$SQL_DATABASE" \
-            -G \
-            -U "fabric-sql-cicd" \
+            -S "tcp:${SQL_SERVER},1433" \
+            -d "${SQL_DATABASE}" \
+            -C \
             -i sql/dev/create_table.sql
 
-      - name: Run INSERT metadata
+      - name: Run INSERT metadata script
         run: |
           sqlcmd \
-            -S "$SQL_SERVER" \
-            -d "$SQL_DATABASE" \
-            -G \
-            -U "fabric-sql-cicd" \
+            -S "tcp:${SQL_SERVER},1433" \
+            -d "${SQL_DATABASE}" \
+            -C \
             -i sql/dev/insert_metadata.sql
