@@ -1,0 +1,24 @@
+name: Run SQL on Fabric (DEV)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-sql-dev:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install sqlcmd
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mssql-tools unixodbc-dev
+
+      - name: Run DEV SQL
+        run: |
+          sqlcmd -S ${{ secrets.SQL_SERVER }} \
+                 -d ${{ secrets.SQL_DATABASE }} \
+                 -G \
+                 -U ${{ secrets.CLIENT_ID }} \
+                 -P ${{ secrets.CLIENT_SECRET }} \
+                 -i sql/dev.sql
