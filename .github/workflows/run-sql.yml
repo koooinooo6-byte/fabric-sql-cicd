@@ -1,5 +1,9 @@
 name: Run SQL on Fabric (DEV)
 
+permissions:
+  contents: read
+
+
 on:
   workflow_dispatch:
 
