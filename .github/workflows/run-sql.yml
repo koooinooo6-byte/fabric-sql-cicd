@@ -18,14 +18,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Install NEW sqlcmd (v1) that supports --access-token
-      - name: Install new sqlcmd (v1)
+      - name: Install sqlcmd v1 (go-sqlcmd)
         run: |
-          curl -L -o sqlcmd https://github.com/microsoft/go-sqlcmd/releases/latest/download/sqlcmd-linux-amd64
+          curl -L -o sqlcmd https://github.com/microsoft/go-sqlcmd/releases/download/v1.6.0/sqlcmd-linux-amd64
           chmod +x sqlcmd
           sudo mv sqlcmd /usr/local/bin/sqlcmd
+          sqlcmd --version
 
-      # Azure login using OIDC
       - name: Azure login (OIDC)
         uses: azure/login@v1
         with:
@@ -33,7 +32,6 @@ jobs:
           tenant-id: ${{ secrets.TENANT_ID }}
           allow-no-subscriptions: true
 
-      # Get Azure AD access token for Fabric SQL
       - name: Get Fabric SQL access token
         run: |
           TOKEN=$(az account get-access-token \
@@ -44,7 +42,6 @@ jobs:
       - name: Verify SQL files
         run: ls -R sql
 
-      # Run CREATE TABLE script
       - name: Run CREATE TABLE
         run: |
           sqlcmd \
@@ -54,7 +51,6 @@ jobs:
             --access-token "$SQLCMDACCESS_TOKEN" \
             -i sql/dev/create_table.sql
 
-      # Run INSERT metadata script
       - name: Run INSERT metadata
         run: |
           sqlcmd \
