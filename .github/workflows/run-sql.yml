@@ -9,10 +9,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install sqlcmd
+      - name: Run SQL on Fabric (DEV)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y mssql-tools unixodbc-dev
+          docker run --rm mcr.microsoft.com/mssql-tools \
+            /opt/mssql-tools/bin/sqlcmd \
+            -S ${{ secrets.SQL_SERVER }} \
+            -d ${{ secrets.SQL_DATABASE }} \
+            -G \
+            -Q "SELECT GETDATE();"
 
       - name: Run DEV SQL
         run: |
