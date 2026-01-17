@@ -17,6 +17,8 @@ jobs:
           client-id: ${{ secrets.CLIENT_ID }}
           tenant-id: ${{ secrets.TENANT_ID }}
           client-secret: ${{ secrets.CLIENT_SECRET }}
+          allow-no-subscriptions: true
+
 
       - name: Run CREATE TABLE script
         run: |
