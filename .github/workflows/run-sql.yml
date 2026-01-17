@@ -1,9 +1,5 @@
 name: Run SQL on Fabric (DEV)
 
-permissions:
-  contents: read
-
-
 on:
   workflow_dispatch:
 
@@ -15,35 +11,30 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Login to Azure (Service Principal)
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.CLIENT_ID }}
-          tenant-id: ${{ secrets.TENANT_ID }}
-          client-secret: ${{ secrets.CLIENT_SECRET }}
-          allow-no-subscriptions: true
-
+      - name: Install sqlcmd
+        run: |
+          docker pull mcr.microsoft.com/mssql-tools
 
       - name: Run CREATE TABLE script
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}:/work \
+            -e SQLCMDPASSWORD="${{ secrets.CLIENT_SECRET }}" \
             mcr.microsoft.com/mssql-tools \
-            /opt/mssql-tools/bin/sqlcmd \
-              -S ${{ secrets.SQL_SERVER }} \
-              -d ${{ secrets.SQL_DATABASE }} \
-              -G \
-              -C \
-              -i /work/sql/dev/01_create_tables.sql
+            sqlcmd \
+            -S ${{ secrets.SQL_SERVER }} \
+            -d ${{ secrets.SQL_DATABASE }} \
+            -U ${{ secrets.CLIENT_ID }} \
+            -G \
+            -i sql/create_table.sql
 
       - name: Run INSERT metadata script
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}:/work \
+            -e SQLCMDPASSWORD="${{ secrets.CLIENT_SECRET }}" \
             mcr.microsoft.com/mssql-tools \
-            /opt/mssql-tools/bin/sqlcmd \
-              -S ${{ secrets.SQL_SERVER }} \
-              -d ${{ secrets.SQL_DATABASE }} \
-              -G \
-              -C \
-              -i /work/sql/dev/02_insert_metadata.sql
+            sqlcmd \
+            -S ${{ secrets.SQL_SERVER }} \
+            -d ${{ secrets.SQL_DATABASE }} \
+            -U ${{ secrets.CLIENT_ID }} \
+            -G \
+            -i sql/insert_metadata.sql
