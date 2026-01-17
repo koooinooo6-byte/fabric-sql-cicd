@@ -39,7 +39,7 @@ jobs:
             -d $SQL_DATABASE \
             -G \
             -U $CLIENT_ID \
-            -i sql/create_table.sql
+            -i sql/dev/create_table.sql
 
       - name: Run INSERT metadata script
         working-directory: ${{ github.workspace }}
@@ -49,4 +49,4 @@ jobs:
             -d $SQL_DATABASE \
             -G \
             -U $CLIENT_ID \
-            -i sql/insert_metadata.sql
+            -i sql/dev/insert_metadata.sql
