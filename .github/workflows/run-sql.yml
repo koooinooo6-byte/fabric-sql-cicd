@@ -1,11 +1,11 @@
 name: Run SQL on Fabric (DEV)
 
-on:
-  workflow_dispatch:
-
 permissions:
   contents: read
-  id-token: write   # REQUIRED
+  id-token: write
+
+on:
+  workflow_dispatch:
 
 jobs:
   run-sql:
@@ -18,15 +18,15 @@ jobs:
       TENANT_ID: ${{ secrets.TENANT_ID }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install sqlcmd (ODBC 18)
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl gnupg apt-transport-https
-          curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft.gpg
-          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/ubuntu/22.04/prod jammy main" | sudo tee /etc/apt/sources.list.d/mssql-release.list
+          sudo apt-get install -y curl apt-transport-https
+          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+          curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list \
+            | sudo tee /etc/apt/sources.list.d/mssql-release.list
           sudo apt-get update
           sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
           echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
@@ -48,7 +48,7 @@ jobs:
       - name: Verify SQL files
         run: ls -R sql
 
-      - name: Run CREATE TABLE script
+      - name: Run CREATE TABLE
         run: |
           sqlcmd \
             -S "tcp:${SQL_SERVER},1433" \
@@ -56,7 +56,7 @@ jobs:
             -C \
             -i sql/dev/create_table.sql
 
-      - name: Run INSERT metadata script
+      - name: Run INSERT metadata
         run: |
           sqlcmd \
             -S "tcp:${SQL_SERVER},1433" \
