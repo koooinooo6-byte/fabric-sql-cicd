@@ -13,7 +13,7 @@ jobs:
       CLIENT_ID: ${{ secrets.CLIENT_ID }}
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install sqlcmd (ODBC 18)
@@ -28,7 +28,11 @@ jobs:
           echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> ~/.bashrc
           source ~/.bashrc
 
+      - name: Verify SQL files exist
+        run: ls -R sql
+
       - name: Run CREATE TABLE script
+        working-directory: ${{ github.workspace }}
         run: |
           /opt/mssql-tools18/bin/sqlcmd \
             -S $SQL_SERVER \
@@ -38,6 +42,7 @@ jobs:
             -i sql/create_table.sql
 
       - name: Run INSERT metadata script
+        working-directory: ${{ github.workspace }}
         run: |
           /opt/mssql-tools18/bin/sqlcmd \
             -S $SQL_SERVER \
