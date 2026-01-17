@@ -49,15 +49,16 @@ jobs:
       - name: Run CREATE TABLE
         run: |
           sqlcmd \
-            -S "tcp:${SQL_SERVER},1433" \
+            -S "tcp:${SQL_SERVER}" \
             -d "${SQL_DATABASE}" \
             -C \
+            --access-token "$SQLCMDACCESS_TOKEN" \
             -i sql/dev/create_table.sql
 
       - name: Run INSERT metadata
         run: |
           sqlcmd \
-            -S "tcp:${SQL_SERVER},1433" \
+            -S "tcp:${SQL_SERVER}" \
             -d "${SQL_DATABASE}" \
             -C \
-            -i sql/dev/insert_metadata.sql
+            --access-token "$SQLCMDACCESS_TOKEN" \
