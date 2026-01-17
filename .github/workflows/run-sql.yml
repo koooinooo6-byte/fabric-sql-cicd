@@ -1,33 +1,23 @@
-name: Run SQL on Fabric
+name: Run SQL on Fabric (DEV)
 
 on:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: "Choose environment"
-        required: true
-        type: choice
-        options:
-          - DEV
-          - TEST
-          - PROD
 
 jobs:
   run-sql:
     runs-on: ubuntu-latest
 
     env:
-      SQL_SERVER: ${{ secrets[format('SQL_SERVER_{0}', inputs.environment)] }}
-      SQL_DATABASE: ${{ secrets[format('SQL_DATABASE_{0}', inputs.environment)] }}
-      CLIENT_ID: ${{ secrets[format('CLIENT_ID_{0}', inputs.environment)] }}
+      SQL_SERVER: ${{ secrets.SQL_SERVER }}
+      SQL_DATABASE: ${{ secrets.SQL_DATABASE }}
+      CLIENT_ID: ${{ secrets.CLIENT_ID }}
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Pull sqlcmd image
-        run: |
-          docker pull mcr.microsoft.com/mssql-tools
+        run: docker pull mcr.microsoft.com/mssql-tools
 
       - name: Run CREATE TABLE script
         run: |
